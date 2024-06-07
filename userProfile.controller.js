@@ -3,11 +3,12 @@ const crypto = require('crypto');
 
 async function editLoggedUserInfo(req, res){
     const {firstNameTemp, lastNameTemp, emailTemp } = req.body;
+
     const sqlUpdateQuery = `UPDATE users SET
-        email = "${emailTemp}", givenName = "${firstNameTemp}", familyName = "${lastNameTemp}" WHERE username = "${req.cookies.username}"`;
+        email = ? , givenName = ? , familyName = ? WHERE username = ?`;
     
         try {
-            await runQueryOnDatabaseAndFetchEntireResult(sqlUpdateQuery);
+            await runQueryOnDatabaseAndFetchEntireResult(sqlUpdateQuery, [emailTemp, firstNameTemp, lastNameTemp, req.cookies.username]);
             res.send({ success: true, message: 'Profile data updated successfully' });
         } catch (error) {
             console.error('Failed to update profile data:', error);
@@ -16,11 +17,11 @@ async function editLoggedUserInfo(req, res){
 }
 async function getUserInfo(req, res){
     //get the info for the user in the cookie and send it in a json via res
-    let sqlQuery = `SELECT * FROM users WHERE username = "${req.cookies.username}" AND password = "${req.cookies.pass}"`;
+    let sqlQuery = `SELECT * FROM users WHERE username = ? AND password = ?`;
     
     //take the data and put it in a json and send it with res
     try {
-        let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery);
+        let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery, [req.cookies.username, req.cookies.pass]);
         
         if (results.length === 0) {
           return res.status(404).json({ error: 'User not found' });
@@ -58,10 +59,10 @@ async function checkCookie(req, res){
     console.log(req.cookies);
     if (req.cookies && req.cookies.pass && req.cookies.username) {
         console.log(req.cookies);
-        let sqlQuery = `SELECT * FROM users WHERE username = "${req.cookies.username}" AND password = "${req.cookies.pass}"`;
-        let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery);
+        let sqlQuery = `SELECT * FROM users WHERE username = ? AND password = ?`;
+        let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery, [req.cookies.username, req.cookies.pass]);
         console.log(results);
-        if (results.length === 0) {
+        if (results.length === 0) { 
             res.status(401).send({ success: false, message: 'Invalid cookies!' });
         }else{
             return res.status(200).send({ success: true, message: 'User is authenticated' });
@@ -90,9 +91,9 @@ async function checkCredentialsAgainstDatabase(req, res){
     hash.update(password);
     const hashedPassword = hash.digest('hex');
 
-    let sqlQuery = `SELECT * FROM users WHERE username = "${username}" AND password = "${hashedPassword}"`;
+    const sqlQuery = 'SELECT * FROM users WHERE username = ? AND password = ?';
 
-    let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery);
+    let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery, [username, hashedPassword]);
 
     if (results.length === 0) {
         res.status(401).send({ success: false, message: 'Login failed! Invalid username or password' });
@@ -145,9 +146,9 @@ async function addCredentialsToDatabase(req, res){
         return; 
     }
 
-    let sqlQuery = `SELECT * FROM users WHERE username = "${username}"`;
+    let sqlQuery = `SELECT * FROM users WHERE username = ?`;
 
-    let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery);
+    let results = await runQueryOnDatabaseAndFetchEntireResult(sqlQuery, [username]);
 
     if (results.length > 0) {
         res.send({ success: false, message: 'Signup failed! Username already exists.' });
@@ -159,11 +160,9 @@ async function addCredentialsToDatabase(req, res){
     hash.update(password);
     const hashedPassword = hash.digest('hex');
 
-    let sqlInsertQuery = `INSERT INTO users (givenName, familyName, username, email, password, birthDate, height, weight, gender, needsSpecialAssistance, userAgreedToFetchData, activityIndex) VALUES ("${givenName}", "${familyName}", "${username}", "${email}", "${hashedPassword}", 
-    "1990-01-01", 0, 0, "other", false, true, 0
-    )`;
+    let sqlInsertQuery = `INSERT INTO users (givenName, familyName, username, email, password, birthDate, height, weight, gender, needsSpecialAssistance, userAgreedToFetchData, activityIndex) VALUES (?, ?, ?, ?, ? , "1990-01-01", 0, 0, "other", false, true, 0 )`;
     console.log(sqlInsertQuery);
-    let result = await runQueryOnDatabaseAndFetchEntireResult(sqlInsertQuery);
+    let result = await runQueryOnDatabaseAndFetchEntireResult(sqlInsertQuery, [givenName, familyName, username, email, hashedPassword]);
     if (result.error) {
         res.status(401).send({ success: false, message: 'An error occurred while signing up. Please try again later.' });
       } else {
@@ -200,10 +199,10 @@ async function saveHealthData(req, res) {
         return res.status(401).send({ success: false, message: 'User is not authenticated' });
     }
 
-    const sqlSelectQuery = `SELECT birthDate, height, weight, gender, needsSpecialAssistance, activityIndex FROM users WHERE username = "${username}"`;
+    const sqlSelectQuery = `SELECT birthDate, height, weight, gender, needsSpecialAssistance, activityIndex FROM users WHERE username = ?`;
     
     try {
-        const results = await runQueryOnDatabaseAndFetchEntireResult(sqlSelectQuery);
+        const results = await runQueryOnDatabaseAndFetchEntireResult(sqlSelectQuery, [username]);
         if (results.length === 0) {
             return res.status(404).send({ success: false, message: 'User not found' });
         }
@@ -216,20 +215,16 @@ async function saveHealthData(req, res) {
         const updatedGender = gender || currentData.gender;
         const updatedNeedsSpecialAssistance = needsSpecialAssistance !== undefined ? (needsSpecialAssistance == true ? 1 : 0) : currentData.needsSpecialAssistance;
         const updatedActivityIndex = activityIndex !== 0 ? activityIndex : currentData.activityIndex;
+        
+        const sqlUpdateQuery = `UPDATE users SET birthDate = ?, height = ?, weight = ?, gender = ?, needsSpecialAssistance = ?, activityIndex = ? WHERE username = ?`;
 
-        const sqlUpdateQuery = `UPDATE users SET
-            birthDate = "${updatedBirthDate}", height = "${updatedHeight}", weight = "${updatedWeight}", gender = "${updatedGender}", needsSpecialAssistance = ${updatedNeedsSpecialAssistance},
-            activityIndex = ${updatedActivityIndex}
-            WHERE username = "${username}"`;
-
-        await runQueryOnDatabaseAndFetchEntireResult(sqlUpdateQuery);
+        await runQueryOnDatabaseAndFetchEntireResult(sqlUpdateQuery, [updatedBirthDate, updatedHeight, updatedWeight, updatedGender, updatedNeedsSpecialAssistance, updatedActivityIndex, username]);
         res.send({ success: true, message: 'Health data updated successfully' });
     } catch (error) {
         console.error('Failed to update health data:', error);
         res.status(500).send({ success: false, message: 'Failed to update health data' });
     }
 }
-
 
 module.exports = {
     checkCredentialsAgainstDatabase,
