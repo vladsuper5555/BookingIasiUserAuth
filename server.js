@@ -11,7 +11,7 @@ const server = express();
 }));*/
 server.use(express.json());
 server.use(cookieParser());
-server.use('/api', userProfileRouter);
+server.use('/users', userProfileRouter);
 
 async function startServer() {
     server.listen(PORT, () => console.log(`Server started on PORT ${PORT}!`));

@@ -15,11 +15,11 @@ userProfileRouter.post('/accessTokens', checkCredentialsAgainstDatabase);
 userProfileRouter.get('/accessTokens', checkCookie);
 userProfileRouter.delete('/accessTokens', logout);
 
-userProfileRouter.post('/users/healthForm', saveHealthData);
-userProfileRouter.patch('/users/healthForm', saveHealthData);
+userProfileRouter.post('/healthForm', saveHealthData);
+userProfileRouter.patch('/healthForm', saveHealthData);
 
-userProfileRouter.post('/users', addCredentialsToDatabase);
-userProfileRouter.get('/users', getUserInfo);
-userProfileRouter.patch('/users', editLoggedUserInfo);
+userProfileRouter.post('', addCredentialsToDatabase);
+userProfileRouter.get('', getUserInfo);
+userProfileRouter.patch('', editLoggedUserInfo);
 
 module.exports = { userProfileRouter }
