@@ -1,6 +1,4 @@
 var mysql = require("mysql");
-const { faker } = require("@faker-js/faker");
-const fs = require("node:fs");
 
 var con = mysql.createConnection({
   host: "localhost",
