@@ -117,6 +117,12 @@ async function checkCredentialsAgainstDatabase(req, res){
     }
     res.end();
 }
+
+function isValidEmail(email) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }
+
 async function addCredentialsToDatabase(req, res){
     const { givenName, familyName, username, email, password } = req.body;
 
@@ -140,10 +146,20 @@ async function addCredentialsToDatabase(req, res){
         res.end();
         return; 
     }
+    if (!isValidEmail(email)){
+        res.status(400).send({ success: false, message: 'Not a valid email adress!' });
+        res.end();
+        return; 
+    }
     if (!password) {
         res.status(400).send({ success: false, message: 'Password field cannot be null!' });
         res.end();
         return; 
+    }
+    if (password.length <8){
+        res.status(400).send({ success: false, message: 'Password should have at least 8 characters!' });
+        res.end();
+        return;
     }
 
     let sqlQuery = `SELECT * FROM users WHERE username = ?`;
